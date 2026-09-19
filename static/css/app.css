@@ -1,0 +1,173 @@
+:root {
+  --a4-dark: #1f2937;
+  --a4-primary: #0f766e;
+  --a4-accent: #b45309;
+}
+
+body {
+  background: #eef1f5;
+  font-size: 0.95rem;
+}
+
+.navbar-brand {
+  letter-spacing: 0.02em;
+}
+
+/* ---- Banner de la nota (cabecera tipo planilla) ---- */
+.nota-banner {
+  background: linear-gradient(120deg, var(--a4-dark) 0%, #111827 100%);
+  color: #fff;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.75rem;
+  box-shadow: 0 10px 25px -12px rgba(17, 24, 39, 0.6);
+  border-left: 6px solid var(--a4-accent);
+}
+
+.nota-banner-titulo {
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.nota-banner-sub {
+  color: #d1d5db;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.nota-banner-empresa {
+  color: var(--a4-accent);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.nota-banner-datos {
+  color: #e5e7eb;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+/* ---- Tarjetas de sección ---- */
+.section-card {
+  border: 0;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.section-card-header {
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  color: var(--a4-dark);
+  padding: 0.7rem 1rem;
+}
+
+.section-card-header i {
+  color: var(--a4-primary);
+}
+
+.nota-label {
+  background: #f1f3f5;
+  font-weight: 600;
+  width: 130px;
+  white-space: nowrap;
+}
+
+/* ---- Tabla de ítems ---- */
+.items-table th {
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.items-table .col-stock {
+  width: 84px;
+}
+
+.items-table .col-cant {
+  width: 88px;
+}
+
+.items-table .col-estado {
+  width: 120px;
+}
+
+.items-table .col-precio {
+  width: 130px;
+}
+
+.items-table .col-quitar {
+  width: 48px;
+}
+
+.items-table td {
+  vertical-align: middle;
+  padding: 0.15rem 0.35rem;
+}
+
+.items-table .form-control {
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  background: transparent;
+  box-shadow: none;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.items-table tr:hover .form-control {
+  background: #fff;
+}
+
+.items-table .form-control:focus {
+  background: #fff;
+  border-color: var(--a4-primary);
+  box-shadow: 0 0 0 0.15rem rgba(15, 118, 110, 0.15);
+}
+
+.item-stock .form-control {
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ---- Botones / píldoras ---- */
+.btn-pill {
+  border-radius: 50px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.fila-eliminada {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+/* ---- Errores ---- */
+.errorlist {
+  color: var(--bs-danger, #dc3545);
+  font-size: 0.8rem;
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+}
+
+/* ---- Impresión ---- */
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
+@media print {
+  .navbar, .btn, footer, .no-print {
+    display: none !important;
+  }
+  .nota-print {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  .card.nota-print .card-body {
+    padding: 0;
+  }
+}

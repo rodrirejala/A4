@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="nota-banner mb-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+    <div class="text-center text-md-start">
+      <h1 class="nota-banner-titulo mb-0">{{ company.clase }}</h1>
+      <div class="nota-banner-sub">{{ company.subtitulo }}</div>
+      <div class="nota-banner-empresa">{{ company.nombre }}</div>
+    </div>
+    <div class="nota-banner-datos text-center text-md-end">
+      <div>{{ company.ruc }}</div>
+      <div>{{ company.direccion }}</div>
+      <div>{{ company.telefono }}</div>
+      <div>{{ company.ciudad }}</div>
+    </div>
+  </div>
+</div>
+
+<h4 class="mb-3"><i class="bi bi-journal-text text-primary"></i> {{ titulo }}</h4>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ formset.management_form }}
+
+  {% if form.errors or formset.errors %}
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-circle"></i> Hay errores en el formulario. Revisá los campos marcados.
+    </div>
+  {% endif %}
+
+  <div class="card section-card mb-3">
+    <div class="card-header section-card-header">
+      <i class="bi bi-clipboard-data"></i> Datos de la nota
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.obra_nombre.id_for_label }}">Obra</label>
+          {{ form.obra_nombre }}
+          <div class="form-text">Si no está en la lista, se creará la obra nueva al guardar.</div>
+          {{ form.obra_nombre.errors }}
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">N.P. N°</label>
+          <input type="text" class="form-control" value="{{ nota.numero|default:'Auto' }}" disabled>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.encargado.id_for_label }}">Encargado</label>
+          {{ form.encargado }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.etapa.id_for_label }}">Etapa</label>
+          {{ form.etapa }}
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.solicitante.id_for_label }}">Solicitante <span class="text-danger">*</span></label>
+          {{ form.solicitante }}
+          {{ form.solicitante.errors }}
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="{{ form.prioridad.id_for_label }}">Prioridad</label>
+          {{ form.prioridad }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.fecha.id_for_label }}">Fecha <span class="text-danger">*</span></label>
+          {{ form.fecha }}
+          {{ form.fecha.errors }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.limite.id_for_label }}">Límite</label>
+          {{ form.limite }}
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      <div class="d-flex align-items-center gap-2 text-muted mb-3">
+        <i class="bi bi-hammer" style="font-size: 1.1rem;"></i>
+        <span class="fw-semibold">Para Administración</span>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.proveedor_nombre.id_for_label }}">Proveedor</label>
+          {{ form.proveedor_nombre }}
+          <div class="form-text">Si no está en la lista, se creará el proveedor nuevo al guardar.</div>
+          {{ form.proveedor_nombre.errors }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.creado_por.id_for_label }}">Creado por</label>
+          {{ form.creado_por }}
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.vendedor.id_for_label }}">Vendedor/a</label>
+          {{ form.vendedor }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="{{ form.retira.id_for_label }}">Retira</label>
+          {{ form.retira }}
+        </div>
+        <div class="col-md-3 d-flex align-items-end gap-3 pb-1">
+          <div class="form-check">
+            {{ form.para_envio }}
+            <label class="form-check-label" for="{{ form.para_envio.id_for_label }}">Para Envío</label>
+          </div>
+          <div class="form-check">
+            {{ form.a_retirar }}
+            <label class="form-check-label" for="{{ form.a_retirar.id_for_label }}">A retirar</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card section-card mb-3">
+    <div class="card-header section-card-header d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-box-seam"></i> Detalle de las mercaderías</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge text-bg-light border" id="contador-items">1 / {{ max_items }} ítems</span>
+        <button type="button" class="btn btn-sm btn-primary" id="btn-agregar-fila">
+          <i class="bi bi-plus-lg"></i> Agregar fila
+        </button>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped items-table mb-0" id="tabla-items">
+          <thead class="table-dark">
+            <tr>
+              <th class="col-stock">Stock</th>
+              <th class="col-cant">Cant.</th>
+              <th>Detalle de las mercaderías</th>
+              <th>Especificaciones/Medidas</th>
+              <th class="col-estado">Estado</th>
+              <th class="col-precio">Precios</th>
+              <th class="col-quitar"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-items">
+            {% for item_form in formset %}
+              <tr class="item-row {% if item_form.DELETE.value %}fila-eliminada{% endif %}">
+                <td class="align-middle item-stock">{{ item_form.id }}{{ item_form.stock }}</td>
+                <td class="align-middle">{{ item_form.cantidad }}</td>
+                <td>{{ item_form.detalle }}</td>
+                <td>{{ item_form.especificaciones }}</td>
+                <td>{{ item_form.estado }}</td>
+                <td>{{ item_form.precio }}</td>
+                <td class="text-center align-middle">
+                  {{ item_form.DELETE }}
+                  <button type="button" class="btn btn-sm btn-outline-danger btn-pill quitar-fila" title="Quitar fila">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+            <tr id="fila-template" class="d-none">
+              <td class="align-middle item-stock">{{ formset.empty_form.id }}{{ formset.empty_form.stock }}</td>
+              <td class="align-middle">{{ formset.empty_form.cantidad }}</td>
+              <td>{{ formset.empty_form.detalle }}</td>
+              <td>{{ formset.empty_form.especificaciones }}</td>
+              <td>{{ formset.empty_form.estado }}</td>
+              <td>{{ formset.empty_form.precio }}</td>
+              <td class="text-center align-middle">
+                {{ formset.empty_form.DELETE }}
+                <button type="button" class="btn btn-sm btn-outline-danger btn-pill quitar-fila" title="Quitar fila">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="p-2 small text-muted">Stock = cantidad disponible (número). Mínimo 1 fila, máximo {{ max_items }}.</div>
+    </div>
+  </div>
+
+  <div class="card section-card mb-3">
+    <div class="card-header section-card-header">
+      <i class="bi bi-chat-left-text"></i> Observaciones y entrega
+    </div>
+    <div class="card-body">
+      <label class="form-label" for="{{ form.observaciones.id_for_label }}">Observaciones</label>
+      {{ form.observaciones }}
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-4">
+    <button type="submit" class="btn btn-primary btn-lg px-4">
+      <i class="bi bi-save"></i> Guardar Nota de Pedido
+    </button>
+    <a href="{% url 'pedidos:panel' %}" class="btn btn-secondary btn-lg px-4">Cancelar</a>
+  </div>
+</form>
+
+{# Sugerencias (datalists) para los campos de texto #}
+<datalist id="datalist-obras">{% for o in sugerencias.obras %}<option value="{{ o }}">{% endfor %}</datalist>
+<datalist id="datalist-proveedores">{% for p in sugerencias.proveedores %}<option value="{{ p }}">{% endfor %}</datalist>
+<datalist id="datalist-prioridades">{% for p in sugerencias.prioridades %}<option value="{{ p }}">{% endfor %}</datalist>
+<datalist id="datalist-encargados">{% for e in sugerencias.encargados %}<option value="{{ e }}">{% endfor %}</datalist>
+<datalist id="datalist-etapas">{% for e in sugerencias.etapas %}<option value="{{ e }}">{% endfor %}</datalist>
+<datalist id="datalist-solicitantes">{% for s in sugerencias.solicitantes %}<option value="{{ s }}">{% endfor %}</datalist>
+<datalist id="datalist-vendedores">{% for v in sugerencias.vendedores %}<option value="{{ v }}">{% endfor %}</datalist>
+<datalist id="datalist-retiran">{% for r in sugerencias.retiran %}<option value="{{ r }}">{% endfor %}</datalist>
+<datalist id="datalist-detalles">{% for d in sugerencias.detalles %}<option value="{{ d }}">{% endfor %}</datalist>
+<datalist id="datalist-especificaciones">{% for e in sugerencias.especificaciones %}<option value="{{ e }}">{% endfor %}</datalist>
+
+<script>
+  window.FORMSET_CONFIG = {
+    prefix: '{{ formset.prefix }}',
+    maxForm: {{ formset.max_num }}
+  };
+</script>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'js/items_formset.js' %}"></script>
+{% endblock %}

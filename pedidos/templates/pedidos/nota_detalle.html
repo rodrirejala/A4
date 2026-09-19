@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Nota N° {{ nota.numero }}{% endblock %}
+
+{% block content %}
+<div class="mb-3 d-flex gap-2 flex-wrap">
+  <a href="{% url 'pedidos:panel' %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+  <a href="{% url 'pedidos:editar' nota.pk %}" class="btn btn-primary"><i class="bi bi-pencil"></i> Editar</a>
+  <a href="{% url 'pedidos:descargar' nota.pk %}" class="btn btn-success"><i class="bi bi-download"></i> Descargar Excel</a>
+</div>
+
+<div class="card nota-print" id="nota-print">
+  <div class="card-body">
+    <div class="text-center mb-3">
+      <h3 class="fw-bold mb-0">{{ company.clase }}</h3>
+      <div class="text-muted">{{ company.subtitulo }}</div>
+      <div class="fw-bold fs-4">{{ company.nombre }}</div>
+      <div>{{ company.ruc }}</div>
+      <div>{{ company.direccion }}</div>
+      <div>{{ company.telefono }} · {{ company.ciudad }}</div>
+    </div>
+
+    <table class="table table-bordered table-sm mb-3">
+      <tbody>
+        <tr>
+          <td class="nota-label">Obra:</td><td>{{ nota.obra.nombre|default:'—' }}</td>
+          <td class="nota-label">N.P. N°</td><td class="fw-bold">{{ nota.numero }}</td>
+        </tr>
+        <tr>
+          <td class="nota-label">Encargado:</td><td>{{ nota.encargado|default:'—' }}</td>
+          <td class="nota-label">Etapa:</td><td>{{ nota.etapa|default:'—' }}</td>
+        </tr>
+        <tr>
+          <td class="nota-label">Fecha:</td><td>{{ nota.fecha|date:'d/m/Y' }}</td>
+          <td class="nota-label">Solicitante:</td><td>{{ nota.solicitante }}</td>
+        </tr>
+        <tr>
+          <td class="nota-label">Prioridad:</td><td>{{ nota.prioridad }}</td>
+          <td class="nota-label">Límite:</td><td>{{ nota.limite|date:'d/m/Y'|default:'—' }}</td>
+        </tr>
+        <tr>
+          <td class="nota-label">Proveedor:</td><td>{{ nota.proveedor.nombre|default:'—' }}</td>
+          <td class="nota-label">Vendedor/a:</td><td>{{ nota.vendedor|default:'—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="small fst-italic text-muted">Para Administración</p>
+
+    <table class="table table-bordered table-sm">
+      <thead class="table-light">
+        <tr>
+          <th class="text-center">Stock</th>
+          <th>Cant.</th>
+          <th>Detalle de las mercaderías</th>
+          <th>Especificaciones/Medidas</th>
+          <th>Estado</th>
+          <th>Precios</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in nota.items.all %}
+          <tr>
+            <td class="text-center">{{ item.stock|default:'—' }}</td>
+            <td>{{ item.cantidad|floatformat:'-2'|default:'' }}</td>
+            <td>{{ item.detalle }}</td>
+            <td>{{ item.especificaciones }}</td>
+            <td>{{ item.estado }}</td>
+            <td>{{ item.precio|floatformat:'-2'|default:'' }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-center text-muted">Sin ítems</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="row mt-5">
+      <div class="col-6 text-center border-top pt-2 small">SOLICITADO POR<br>{{ nota.solicitante }}</div>
+      <div class="col-6 text-center border-top pt-2 small">
+        APROBADO POR<br>{% if nota.aprobado_por %}{{ nota.aprobado_por }}{% else %}________{% endif %}
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <div><strong>OBSERVACIONES:</strong> {{ nota.observaciones }}</div>
+      <div class="mt-2">
+        <span class="me-3">Para Envío: <strong>{% if nota.para_envio %}Sí{% else %}No{% endif %}</strong></span>
+        <span class="me-3">A retirar: <strong>{% if nota.a_retirar %}Sí{% else %}No{% endif %}</strong></span>
+        <span>Retira: <strong>{{ nota.retira|default:'—' }}</strong></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-3 d-flex gap-2">
+  <button class="btn btn-outline-dark" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+</div>
+{% endblock %}

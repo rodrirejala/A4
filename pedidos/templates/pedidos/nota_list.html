@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel de Notas de Pedido{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Panel de Notas de Pedido</h4>
+  <div class="d-flex gap-2">
+    <a href="{% url 'pedidos:nueva' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> Nueva Nota de Pedido
+    </a>
+    <a href="{% url 'pedidos:descargar_todas' %}?estado={{ estado }}" class="btn btn-success">
+      <i class="bi bi-file-earmark-zip"></i> Descargar todas (.zip)
+    </a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="card text-bg-warning border-0">
+      <div class="card-body py-2 d-flex justify-content-between align-items-center">
+        <span>Pendientes</span><span class="fs-4 fw-bold">{{ cant_pendientes }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-bg-success border-0">
+      <div class="card-body py-2 d-flex justify-content-between align-items-center">
+        <span>Aprobadas</span><span class="fs-4 fw-bold">{{ cant_aprobadas }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-bg-dark border-0">
+      <div class="card-body py-2 d-flex justify-content-between align-items-center">
+        <span>Total</span><span class="fs-4 fw-bold">{{ notas.count }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-5">
+    <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por N°, obra, solicitante, proveedor…">
+  </div>
+  <div class="col-md-3">
+    <select name="estado" class="form-select">
+      <option value="">Todos los estados</option>
+      <option value="pendiente" {% if estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+      <option value="aprobada" {% if estado == 'aprobada' %}selected{% endif %}>Aprobada</option>
+    </select>
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-outline-secondary w-100">Filtrar</button>
+  </div>
+  <div class="col-md-2">
+    <a href="{% url 'pedidos:panel' %}" class="btn btn-outline-secondary w-100">Limpiar</a>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>N°</th>
+            <th>Fecha</th>
+            <th>Obra</th>
+            <th>Solicitante</th>
+            <th>Proveedor</th>
+            <th>Prioridad</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for nota in notas %}
+            <tr>
+              <td class="fw-bold">{{ nota.numero }}</td>
+              <td>{{ nota.fecha|date:'d/m/Y' }}</td>
+              <td>{{ nota.obra.nombre|default:'—' }}</td>
+              <td>{{ nota.solicitante }}</td>
+              <td>{{ nota.proveedor.nombre|default:'—' }}</td>
+              <td>{{ nota.prioridad }}</td>
+              <td>
+                {% if nota.estado == 'aprobada' %}
+                  <span class="badge text-bg-success">Aprobada</span>
+                {% else %}
+                  <span class="badge text-bg-warning">Pendiente</span>
+                {% endif %}
+              </td>
+              <td class="text-end text-nowrap">
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'pedidos:detalle' nota.pk %}" title="Ver">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'pedidos:editar' nota.pk %}" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a class="btn btn-sm btn-outline-success" href="{% url 'pedidos:descargar' nota.pk %}" title="Descargar Excel">
+                  <i class="bi bi-download"></i>
+                </a>
+                <form method="post" action="{% url 'pedidos:aprobar' nota.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  {% if nota.estado == 'aprobada' %}
+                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Volver a pendiente">
+                      <i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                  {% else %}
+                    <input type="hidden" name="aprobado_por" value="{{ nota.solicitante }}">
+                    <button type="submit" class="btn btn-sm btn-outline-success aprobar-btn" title="Aprobar"
+                            data-solicitante="{{ nota.solicitante }}">
+                      <i class="bi bi-check-lg"></i>
+                    </button>
+                  {% endif %}
+                </form>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'pedidos:borrar' nota.pk %}" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8" class="text-center text-muted py-4">
+                No hay notas de pedido. <a href="{% url 'pedidos:nueva' %}">Crear la primera</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.aprobar-btn').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var form = btn.closest('form');
+      var input = form.querySelector('input[name="aprobado_por"]');
+      var nombre = prompt('¿Quién aprueba esta nota de pedido?', btn.dataset.solicitante || '');
+      if (nombre === null) return;
+      input.value = nombre.trim();
+      form.submit();
+    });
+  });
+</script>
+{% endblock %}
