@@ -67,6 +67,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'pedidos.context_processors.company',
+                'pedidos.context_processors.rol',
             ],
         },
     },
@@ -157,8 +158,29 @@ PRIORIDADES = [
     ('Baja', 'Baja'),
 ]
 
-# Estados posibles de la nota de pedido
+# Estados posibles de la nota de pedido.
+# El flujo real es: pendiente -> aprobada -> cerrado. ``cerrado`` significa que
+# el material ya se compró, por eso el consolidado de /compras/ excluye las
+# notas en este estado.
 ESTADOS_NOTA = [
     ('pendiente', 'Pendiente'),
     ('aprobada', 'Aprobada'),
+    ('cerrado', 'Cerrado'),
 ]
+
+# Estados en los que la nota todavía genera demanda de compra. Todo lo que no
+# esté en esta tupla se considera "ya comprado" y no aparece en el consolidado.
+ESTADOS_ABIERTOS_NOTA = ['pendiente', 'aprobada']
+
+# Transiciones de estado permitidas. Se usa en el formulario de edicion (solo
+# admin) para no ofrecer combinaciones sin sentido.
+TRANSICIONES_ESTADO = {
+    'pendiente': ['pendiente', 'aprobada', 'cerrado'],
+    'aprobada': ['aprobada', 'cerrado', 'pendiente'],
+    'cerrado': ['cerrado', 'pendiente'],
+}
+
+# Autenticación
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'pedidos:panel'
+LOGOUT_REDIRECT_URL = 'login'

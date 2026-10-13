@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Orden de Compra N° {{ orden.numero|stringformat:"04d" }}{% endblock %}
+
+{% block content %}
+<div class="mb-3 d-flex gap-2 flex-wrap align-items-center">
+  <a href="{% url 'pedidos:compras' %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+  <a href="{% url 'pedidos:orden_descargar' orden.pk %}" class="btn btn-success">
+    <i class="bi bi-download"></i> Descargar Excel
+  </a>
+  {% if es_admin and not orden.anulada %}
+    <form method="post" action="{% url 'pedidos:orden_anular' orden.pk %}" class="d-inline"
+          onsubmit="return confirm('¿Anular la orden OC {{ orden.numero|stringformat:"04d" }}? Sus notas vuelven al consolidado.');">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-danger">
+        <i class="bi bi-x-circle"></i> Anular orden
+      </button>
+    </form>
+  {% endif %}
+  <h5 class="mb-0 ms-1">Orden de Compra N° {{ orden.numero|stringformat:"04d" }}</h5>
+  {% if orden.anulada %}
+    <span class="badge text-bg-secondary">Anulada</span>
+  {% else %}
+    <span class="badge text-bg-success">Vigente</span>
+  {% endif %}
+</div>
+
+{% if orden.anulada %}
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    Esta orden está anulada. Los materiales ya incluidos vuelven a aparecer en el
+    consolidado para que puedas pedirlos de nuevo.
+  </div>
+{% endif %}
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <p class="mb-1"><span class="text-muted">Proveedor:</span>
+          <strong>{{ orden.proveedor.nombre }}</strong></p>
+        <p class="mb-1"><span class="text-muted">RUC:</span> {{ orden.proveedor.ruc|default:'—' }}</p>
+        <p class="mb-1"><span class="text-muted">Teléfono:</span> {{ orden.proveedor.telefono|default:'—' }}</p>
+        <p class="mb-0"><span class="text-muted">Dirección:</span> {{ orden.proveedor.direccion|default:'—' }}</p>
+      </div>
+      <div class="col-md-6">
+        <p class="mb-1"><span class="text-muted">Fecha:</span> {{ orden.fecha|date:'d/m/Y' }}</p>
+        <p class="mb-1"><span class="text-muted">Emitida por:</span>
+          {% if orden.creado_por %}{{ orden.creado_por.get_full_name|default:orden.creado_por.username }}{% else %}—{% endif %}</p>
+        <p class="mb-1"><span class="text-muted">Creada:</span> {{ orden.created_at|date:'d/m/Y H:i' }}</p>
+        {% if orden.observaciones %}
+          <p class="mb-0"><span class="text-muted">Observaciones:</span> {{ orden.observaciones }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header section-card-header fw-semibold">
+    <i class="bi bi-box-seam"></i> Materiales pedidos ({{ orden.lineas.count }})
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Material</th><th>Especificación</th>
+          <th class="text-center">Unidad</th><th class="text-end">Cantidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for linea in orden.lineas.all %}
+          <tr>
+            <td>{{ linea.material.nombre }}</td>
+            <td>{{ linea.especificacion|default:'—' }}</td>
+            <td class="text-center text-muted">{{ linea.material.unidad|default:'—' }}</td>
+            <td class="text-end fw-bold">{{ linea.cantidad|floatformat:"-2" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-center text-muted py-4">La orden no tiene líneas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header section-card-header fw-semibold">
+    <i class="bi bi-journal-text"></i> Notas de pedido de origen ({{ orden.notas.count }})
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr><th>N.P.</th><th>Fecha</th><th>Obra</th><th>Solicitante</th><th class="text-center">Estado</th></tr>
+      </thead>
+      <tbody>
+        {% for nota in orden.notas.all %}
+          <tr>
+            <td class="fw-bold">
+              <a href="{% url 'pedidos:detalle' nota.pk %}">{{ nota.numero }}</a>
+            </td>
+            <td>{{ nota.fecha|date:'d/m/Y' }}</td>
+            <td>{{ nota.obra.nombre|default:'—' }}</td>
+            <td>{{ nota.solicitante }}</td>
+            <td class="text-center">
+              <span class="badge text-bg-{{ nota.clase_estado }}">{{ nota.get_estado_display }}</span>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-4">Sin notas de origen.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

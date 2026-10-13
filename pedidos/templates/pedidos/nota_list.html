@@ -4,33 +4,53 @@
 
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-  <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Panel de Notas de Pedido</h4>
+  <h4 class="mb-0">
+    <i class="bi {% if es_admin %}bi-speedometer2{% else %}bi-journal-text{% endif %}"></i>
+    {% if es_admin %}Panel de Notas de Pedido{% else %}Mis notas de pedido{% endif %}
+  </h4>
   <div class="d-flex gap-2">
     <a href="{% url 'pedidos:nueva' %}" class="btn btn-primary">
       <i class="bi bi-plus-lg"></i> Nueva Nota de Pedido
     </a>
-    <a href="{% url 'pedidos:descargar_todas' %}?estado={{ estado }}" class="btn btn-success">
-      <i class="bi bi-file-earmark-zip"></i> Descargar todas (.zip)
-    </a>
+    {% if es_admin %}
+      <a href="{% url 'pedidos:descargar_todas' %}?estado={{ estado }}" class="btn btn-success">
+        <i class="bi bi-file-earmark-zip"></i> Descargar todas (.zip)
+      </a>
+    {% endif %}
   </div>
 </div>
 
+{% if not es_admin %}
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    Acá ves únicamente las notas que generaste vos. Para editarlas, aprobarlas o agregar el proveedor,
+    contactá al administrador.
+  </div>
+{% endif %}
+
 <div class="row g-3 mb-3">
-  <div class="col-md-4">
+  <div class="col-6 col-md-3">
     <div class="card text-bg-warning border-0">
       <div class="card-body py-2 d-flex justify-content-between align-items-center">
         <span>Pendientes</span><span class="fs-4 fw-bold">{{ cant_pendientes }}</span>
       </div>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-6 col-md-3">
     <div class="card text-bg-success border-0">
       <div class="card-body py-2 d-flex justify-content-between align-items-center">
         <span>Aprobadas</span><span class="fs-4 fw-bold">{{ cant_aprobadas }}</span>
       </div>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-6 col-md-3">
+    <div class="card text-bg-secondary border-0">
+      <div class="card-body py-2 d-flex justify-content-between align-items-center">
+        <span>Cerradas</span><span class="fs-4 fw-bold">{{ cant_cerradas }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
     <div class="card text-bg-dark border-0">
       <div class="card-body py-2 d-flex justify-content-between align-items-center">
         <span>Total</span><span class="fs-4 fw-bold">{{ notas.count }}</span>
@@ -46,8 +66,9 @@
   <div class="col-md-3">
     <select name="estado" class="form-select">
       <option value="">Todos los estados</option>
-      <option value="pendiente" {% if estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
-      <option value="aprobada" {% if estado == 'aprobada' %}selected{% endif %}>Aprobada</option>
+      {% for codigo, etiqueta in estados %}
+        <option value="{{ codigo }}" {% if estado == codigo %}selected{% endif %}>{{ etiqueta }}</option>
+      {% endfor %}
     </select>
   </div>
   <div class="col-md-2">
@@ -68,6 +89,7 @@
             <th>Fecha</th>
             <th>Obra</th>
             <th>Solicitante</th>
+            {% if es_admin %}<th>Creado por</th>{% endif %}
             <th>Proveedor</th>
             <th>Prioridad</th>
             <th>Estado</th>
@@ -81,48 +103,70 @@
               <td>{{ nota.fecha|date:'d/m/Y' }}</td>
               <td>{{ nota.obra.nombre|default:'—' }}</td>
               <td>{{ nota.solicitante }}</td>
+              {% if es_admin %}<td>{{ nota.autor|default:'—' }}</td>{% endif %}
               <td>{{ nota.proveedor.nombre|default:'—' }}</td>
               <td>{{ nota.prioridad }}</td>
               <td>
-                {% if nota.estado == 'aprobada' %}
-                  <span class="badge text-bg-success">Aprobada</span>
-                {% else %}
-                  <span class="badge text-bg-warning">Pendiente</span>
+                <span class="badge text-bg-{{ nota.clase_estado }}">{{ nota.get_estado_display }}</span>
+                {% if nota.esta_cerrada and nota.cerrado_por %}
+                  <span class="small text-muted">por {{ nota.cerrado_por }}</span>
                 {% endif %}
               </td>
               <td class="text-end text-nowrap">
                 <a class="btn btn-sm btn-outline-secondary" href="{% url 'pedidos:detalle' nota.pk %}" title="Ver">
                   <i class="bi bi-eye"></i>
                 </a>
-                <a class="btn btn-sm btn-outline-primary" href="{% url 'pedidos:editar' nota.pk %}" title="Editar">
-                  <i class="bi bi-pencil"></i>
-                </a>
                 <a class="btn btn-sm btn-outline-success" href="{% url 'pedidos:descargar' nota.pk %}" title="Descargar Excel">
                   <i class="bi bi-download"></i>
                 </a>
-                <form method="post" action="{% url 'pedidos:aprobar' nota.pk %}" class="d-inline">
-                  {% csrf_token %}
-                  {% if nota.estado == 'aprobada' %}
-                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Volver a pendiente">
-                      <i class="bi bi-arrow-counterclockwise"></i>
-                    </button>
-                  {% else %}
-                    <input type="hidden" name="aprobado_por" value="{{ nota.solicitante }}">
-                    <button type="submit" class="btn btn-sm btn-outline-success aprobar-btn" title="Aprobar"
-                            data-solicitante="{{ nota.solicitante }}">
-                      <i class="bi bi-check-lg"></i>
-                    </button>
-                  {% endif %}
-                </form>
-                <a class="btn btn-sm btn-outline-danger" href="{% url 'pedidos:borrar' nota.pk %}" title="Eliminar">
-                  <i class="bi bi-trash"></i>
-                </a>
+                {% if es_admin %}
+                  <a class="btn btn-sm btn-outline-primary" href="{% url 'pedidos:editar' nota.pk %}"
+                     title="{% if nota.esta_cerrada %}Reabrir para editar{% else %}Editar{% endif %}">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <form method="post" action="{% url 'pedidos:aprobar' nota.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    {% if nota.estado == 'aprobada' %}
+                      <button type="submit" class="btn btn-sm btn-outline-warning" title="Volver a pendiente">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                      </button>
+                    {% elif nota.esta_cerrada %}
+                      <button type="submit" class="btn btn-sm btn-outline-warning" disabled title="Nota cerrada: reabrir para aprobar">
+                        <i class="bi bi-check-lg"></i>
+                      </button>
+                    {% else %}
+                      <button type="submit" class="btn btn-sm btn-outline-success" title="Aprobar">
+                        <i class="bi bi-check-lg"></i>
+                      </button>
+                    {% endif %}
+                  </form>
+                  <form method="post" action="{% url 'pedidos:cerrar' nota.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    {% if nota.esta_cerrada %}
+                      <button type="submit" class="btn btn-sm btn-outline-warning" title="Reabrir (volver a pendiente)">
+                        <i class="bi bi-unlock"></i>
+                      </button>
+                    {% else %}
+                      <button type="submit" class="btn btn-sm btn-outline-dark" title="Marcar como comprada (cerrada)">
+                        <i class="bi bi-lock"></i>
+                      </button>
+                    {% endif %}
+                  </form>
+                  <a class="btn btn-sm btn-outline-danger" href="{% url 'pedidos:borrar' nota.pk %}" title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                {% endif %}
               </td>
             </tr>
           {% empty %}
             <tr>
-              <td colspan="8" class="text-center text-muted py-4">
-                No hay notas de pedido. <a href="{% url 'pedidos:nueva' %}">Crear la primera</a>
+              <td colspan="{% if es_admin %}9{% else %}8{% endif %}" class="text-center text-muted py-4">
+                {% if es_admin %}
+                  No hay notas de pedido. <a href="{% url 'pedidos:nueva' %}">Crear la primera</a>
+                {% else %}
+                  Todavía no generaste ninguna nota de pedido.
+                  <a href="{% url 'pedidos:nueva' %}">Crear la primera</a>
+                {% endif %}
               </td>
             </tr>
           {% endfor %}
@@ -131,20 +175,4 @@
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-  document.querySelectorAll('.aprobar-btn').forEach(function (btn) {
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
-      var form = btn.closest('form');
-      var input = form.querySelector('input[name="aprobado_por"]');
-      var nombre = prompt('¿Quién aprueba esta nota de pedido?', btn.dataset.solicitante || '');
-      if (nombre === null) return;
-      input.value = nombre.trim();
-      form.submit();
-    });
-  });
-</script>
 {% endblock %}

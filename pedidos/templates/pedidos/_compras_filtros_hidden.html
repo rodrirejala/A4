@@ -1,0 +1,17 @@
+{% comment %}
+Propaga los filtros vigentes del consolidado cuando se postea la creación de
+la orden, para que las cantidades se recalculen con el mismo recorte que la
+pantalla. ``estado`` es una lista: hay que emitir un input por valor.
+{% endcomment %}
+<input type="hidden" name="obra" value="{{ filtros.obra }}">
+<input type="hidden" name="proveedor" value="{{ filtros.proveedor }}">
+{% for e in filtros.estado %}<input type="hidden" name="estado" value="{{ e }}">
+{% endfor %}
+<input type="hidden" name="desde" value="{{ filtros.desde }}">
+<input type="hidden" name="hasta" value="{{ filtros.hasta }}">
+<input type="hidden" name="q" value="{{ filtros.q }}">
+<input type="hidden" name="material" value="{{ filtros.material }}">
+{# Se propagan tal cual estaban, sin forzar nada: si el admin no marcó
+   "incluir lo ya pedido", la orden no debe duplicar compras. #}
+{% if filtros.incluir_pedidas %}<input type="hidden" name="incluir_pedidas" value="1">{% endif %}
+{% if filtros.sin_catalogar %}<input type="hidden" name="sin_catalogar" value="1">{% endif %}

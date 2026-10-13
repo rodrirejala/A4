@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar material{% endblock %}
+
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-pencil"></i> Editar material</h4>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+          <a href="{% url 'pedidos:materiales' %}" class="btn btn-outline-secondary">Cancelar</a>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h6 class="fw-semibold">Cómo se agrupa</h6>
+        <p class="small text-muted mb-2">
+          La clave se calcula automáticamente del nombre (minúsculas, sin tildes, espacios
+          normalizados). Dos materiales con la misma clave no se permiten porque serían el mismo.
+        </p>
+        <p class="small mb-1"><strong>Clave actual:</strong> <code>{{ material.clave }}</code></p>
+        <p class="small mb-1"><strong>Ítems que lo usan:</strong> {{ usos }}</p>
+        <p class="small mb-0 text-muted">
+          Si cambiás el nombre, la clave se recalcula y se reintentan a enlazar los ítems sin catalogar
+          que ahora coincidan.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

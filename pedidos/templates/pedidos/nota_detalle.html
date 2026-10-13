@@ -3,10 +3,17 @@
 {% block title %}Nota N° {{ nota.numero }}{% endblock %}
 
 {% block content %}
-<div class="mb-3 d-flex gap-2 flex-wrap">
+<div class="mb-3 d-flex gap-2 flex-wrap align-items-center">
   <a href="{% url 'pedidos:panel' %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
-  <a href="{% url 'pedidos:editar' nota.pk %}" class="btn btn-primary"><i class="bi bi-pencil"></i> Editar</a>
   <a href="{% url 'pedidos:descargar' nota.pk %}" class="btn btn-success"><i class="bi bi-download"></i> Descargar Excel</a>
+  {% if es_admin %}
+    <a href="{% url 'pedidos:editar' nota.pk %}" class="btn btn-primary">
+      <i class="bi bi-pencil"></i> {% if nota.esta_cerrada %}Reabrir para editar{% else %}Editar{% endif %}
+    </a>
+  {% endif %}
+  <span class="badge text-bg-{{ nota.clase_estado }} fs-6">{{ nota.get_estado_display }}</span>
+  {% if nota.aprobado_por %}<span class="small text-muted">Aprobó: {{ nota.aprobado_por }}</span>{% endif %}
+  {% if nota.cerrado_por %}<span class="small text-muted">Cerró: {{ nota.cerrado_por }}</span>{% endif %}
 </div>
 
 <div class="card nota-print" id="nota-print">
@@ -50,26 +57,26 @@
     <table class="table table-bordered table-sm">
       <thead class="table-light">
         <tr>
-          <th class="text-center">Stock</th>
+          {% if es_admin %}<th class="text-center">Stock</th>{% endif %}
           <th>Cant.</th>
           <th>Detalle de las mercaderías</th>
           <th>Especificaciones/Medidas</th>
-          <th>Estado</th>
-          <th>Precios</th>
+          {% if es_admin %}<th>Estado</th>{% endif %}
+          {% if es_admin %}<th>Precios</th>{% endif %}
         </tr>
       </thead>
       <tbody>
         {% for item in nota.items.all %}
           <tr>
-            <td class="text-center">{{ item.stock|default:'—' }}</td>
+            {% if es_admin %}<td class="text-center">{{ item.stock|default:'—' }}</td>{% endif %}
             <td>{{ item.cantidad|floatformat:'-2'|default:'' }}</td>
             <td>{{ item.detalle }}</td>
             <td>{{ item.especificaciones }}</td>
-            <td>{{ item.estado }}</td>
-            <td>{{ item.precio|floatformat:'-2'|default:'' }}</td>
+            {% if es_admin %}<td>{{ item.estado }}</td>{% endif %}
+            {% if es_admin %}<td>{{ item.precio|floatformat:'-2'|default:'' }}</td>{% endif %}
           </tr>
         {% empty %}
-          <tr><td colspan="6" class="text-center text-muted">Sin ítems</td></tr>
+          <tr><td colspan="{% if es_admin %}6{% else %}3{% endif %}" class="text-center text-muted">Sin ítems</td></tr>
         {% endfor %}
       </tbody>
     </table>

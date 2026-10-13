@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0"><i class="bi bi-people"></i> Usuarios</h1>
+  <a href="{% url 'pedidos:usuario_crear' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-person-plus"></i> Nuevo usuario
+  </a>
+</div>
+
+<div class="section-card">
+  <div class="section-card-header">
+    <i class="bi bi-shield-lock"></i> Administradores
+    <span class="badge text-bg-warning">{{ administradores|length }}</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Notas creadas</th>
+          <th class="text-end no-print">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in administradores %}
+          <tr>
+            <td class="fw-semibold">
+              {{ u.username }}
+              {% if u.is_superuser %}<span class="badge text-bg-dark ms-1">super</span>{% endif %}
+              {% if u == user %}<span class="badge text-bg-info ms-1">vos</span>{% endif %}
+            </td>
+            <td>{{ u.get_full_name|default:'—' }}</td>
+            <td>{{ u.email|default:'—' }}</td>
+            <td>{{ u.notas_creadas.count }}</td>
+            <td class="text-end no-print">
+              <a href="{% url 'pedidos:usuario_editar' u.pk %}"
+                 class="btn btn-sm btn-outline-primary" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              {% if u != user %}
+                <form method="post" action="{% url 'pedidos:usuario_borrar' u.pk %}" class="d-inline"
+                      onsubmit="return confirm('¿Desactivar el acceso de {{ u.username }}?')">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">
+                    <i class="bi bi-person-x"></i>
+                  </button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-3">No hay administradores.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section-card mt-3">
+  <div class="section-card-header">
+    <i class="bi bi-person-badge"></i> Solicitantes
+    <span class="badge text-bg-secondary">{{ solicitantes|length }}</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Notas creadas</th>
+          <th class="text-end no-print">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in solicitantes %}
+          <tr>
+            <td class="fw-semibold">{{ u.username }}</td>
+            <td>{{ u.get_full_name|default:'—' }}</td>
+            <td>{{ u.email|default:'—' }}</td>
+            <td>{{ u.notas_creadas.count }}</td>
+            <td class="text-end no-print">
+              <a href="{% url 'pedidos:usuario_editar' u.pk %}"
+                 class="btn btn-sm btn-outline-primary" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="post" action="{% url 'pedidos:usuario_borrar' u.pk %}" class="d-inline"
+                    onsubmit="return confirm('¿Desactivar el acceso de {{ u.username }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">
+                  <i class="bi bi-person-x"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-3">No hay solicitantes.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if sin_rol %}
+  <div class="alert alert-warning mt-3">
+    <i class="bi bi-exclamation-triangle"></i>
+    Hay {{ sin_rol|length }} usuario(s) sin rol, por lo tanto <strong>no pueden acceder</strong> a la
+    aplicación: {% for u in sin_rol %}<code>{{ u.username }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}.
+  </div>
+{% endif %}
+
+<div class="alert alert-info mt-3 small">
+  <i class="bi bi-info-circle"></i>
+  Desactivar un usuario le impide iniciar sesión pero <strong>no borra</strong> las notas que ya creó:
+  quedan en el historial con su nombre.
+</div>
+{% endblock %}

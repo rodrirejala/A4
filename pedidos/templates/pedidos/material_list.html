@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Materiales{% endblock %}
+
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-boxes"></i> Catálogo de materiales</h4>
+
+<div class="alert alert-info">
+  <i class="bi bi-info-circle"></i>
+  El consolidado de <a href="{% url 'pedidos:compras' %}">compras</a> agrupa por material del catálogo, no por
+  el texto libre de cada nota. Si dos notas pidieron lo mismo con palabras distintas
+  (<code>cemento 50kg</code> y <code>CEMENTO, 50 kilogramos</code>), la normalización no alcanza:
+  tildá los duplicados abajo y unificalos en uno solo.
+</div>
+
+{% if materiales|length > 1 %}
+<div class="alert alert-secondary small mb-3">
+  <i class="bi bi-intersect"></i>
+  Para unificar duplicados: tildá los que sobran en la columna izquierda y elegí
+  abajo el nombre que queda como oficial.
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header fw-semibold">Agregar material</div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Agregar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <form method="get" class="row g-2 mb-3">
+      <div class="col-md-9">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar material, clave, unidad…">
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-outline-secondary w-100">Filtrar</button>
+      </div>
+    </form>
+
+    <form method="post" action="{% url 'pedidos:material_fusionar' %}"
+          onsubmit="return confirm('¿Unificar los materiales tildados en el destino? Los ítems y órdenes se reasignan.');">
+      {% csrf_token %}
+      <div class="card">
+        <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width:36px"></th>
+              <th>Material</th>
+              <th>Clave</th>
+              <th>Unidad</th>
+              <th>Usos</th>
+              <th>Activo</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for material in materiales %}
+              <tr class="{% if not material.activo %}opacity-50{% endif %}">
+                <td class="text-center">
+                  <input class="form-check-input" type="checkbox" name="origenes" value="{{ material.pk }}"
+                         title="Unificar este material en otro">
+                </td>
+                <td>
+                  <span class="fw-semibold">{{ material.nombre }}</span>
+                  {% if material.especificacion %}<div class="small text-muted">{{ material.especificacion }}</div>{% endif %}
+                  {% if material.notas %}<div class="small text-muted fst-italic">{{ material.notas }}</div>{% endif %}
+                </td>
+                <td><code>{{ material.clave }}</code></td>
+                <td>{{ material.unidad|default:'—' }}</td>
+                <td>
+                  <span class="badge text-bg-light border">{{ material.usos }} ítem(s)</span>
+                </td>
+                <td>{% if material.activo %}<span class="badge text-bg-success">Sí</span>{% else %}<span class="badge text-bg-secondary">No</span>{% endif %}</td>
+                <td class="text-end text-nowrap">
+                  <a class="btn btn-sm btn-outline-primary" href="{% url 'pedidos:material_editar' material.pk %}" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <form method="post" action="{% url 'pedidos:material_borrar' material.pk %}" class="d-inline"
+                        onsubmit="return confirm('¿Eliminar el material {{ material.nombre }}?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7" class="text-center text-muted py-4">No hay materiales en el catálogo.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if materiales|length > 1 %}
+        <div class="card-footer d-flex flex-wrap gap-3 align-items-end">
+          <div>
+            <label class="form-label small mb-1" for="f_destino">Unificar los tildados en</label>
+            <select name="destino" id="f_destino" class="form-select form-select-sm" required>
+              <option value="">Elegir material…</option>
+              {% for material in materiales %}
+                <option value="{{ material.pk }}">{{ material.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-intersect"></i> Unificar duplicados
+          </button>
+          <span class="small text-muted ms-auto">
+            Los ítems y las líneas de orden se reasignan al destino; el material tildado se elimina.
+          </span>
+        </div>
+      {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

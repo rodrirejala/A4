@@ -79,46 +79,57 @@
         </div>
       </div>
 
-      <hr class="my-4">
+      {% if es_admin %}
+        <hr class="my-4">
 
-      <div class="d-flex align-items-center gap-2 text-muted mb-3">
-        <i class="bi bi-hammer" style="font-size: 1.1rem;"></i>
-        <span class="fw-semibold">Para Administración</span>
-      </div>
+        <div class="d-flex align-items-center gap-2 text-muted mb-3">
+          <i class="bi bi-hammer" style="font-size: 1.1rem;"></i>
+          <span class="fw-semibold">Para Administración</span>
+        </div>
 
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label class="form-label" for="{{ form.proveedor_nombre.id_for_label }}">Proveedor</label>
-          {{ form.proveedor_nombre }}
-          <div class="form-text">Si no está en la lista, se creará el proveedor nuevo al guardar.</div>
-          {{ form.proveedor_nombre.errors }}
-        </div>
-        <div class="col-md-6">
-          <label class="form-label" for="{{ form.creado_por.id_for_label }}">Creado por</label>
-          {{ form.creado_por }}
-        </div>
-      </div>
-
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label class="form-label" for="{{ form.vendedor.id_for_label }}">Vendedor/a</label>
-          {{ form.vendedor }}
-        </div>
-        <div class="col-md-3">
-          <label class="form-label" for="{{ form.retira.id_for_label }}">Retira</label>
-          {{ form.retira }}
-        </div>
-        <div class="col-md-3 d-flex align-items-end gap-3 pb-1">
-          <div class="form-check">
-            {{ form.para_envio }}
-            <label class="form-check-label" for="{{ form.para_envio.id_for_label }}">Para Envío</label>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.proveedor_nombre.id_for_label }}">Proveedor</label>
+            {{ form.proveedor_nombre }}
+            <div class="form-text">Si no está en la lista, se creará el proveedor nuevo al guardar.</div>
+            {{ form.proveedor_nombre.errors }}
           </div>
-          <div class="form-check">
-            {{ form.a_retirar }}
-            <label class="form-check-label" for="{{ form.a_retirar.id_for_label }}">A retirar</label>
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.creado_por.id_for_label }}">Creado por</label>
+            {{ form.creado_por }}
           </div>
         </div>
-      </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.vendedor.id_for_label }}">Vendedor/a</label>
+            {{ form.vendedor }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="{{ form.retira.id_for_label }}">Retira</label>
+            {{ form.retira }}
+          </div>
+          <div class="col-md-3 d-flex align-items-end gap-3 pb-1">
+            <div class="form-check">
+              {{ form.para_envio }}
+              <label class="form-check-label" for="{{ form.para_envio.id_for_label }}">Para Envío</label>
+            </div>
+            <div class="form-check">
+              {{ form.a_retirar }}
+              <label class="form-check-label" for="{{ form.a_retirar.id_for_label }}">A retirar</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.estado.id_for_label }}">Estado de la nota</label>
+            {{ form.estado }}
+            <div class="form-text">{{ form.estado.help_text }}</div>
+            {{ form.estado.errors }}
+          </div>
+        </div>
+      {% endif %}
     </div>
   </div>
 
@@ -137,24 +148,24 @@
         <table class="table table-bordered table-striped items-table mb-0" id="tabla-items">
           <thead class="table-dark">
             <tr>
-              <th class="col-stock">Stock</th>
+              {% if es_admin %}<th class="col-stock">Stock</th>{% endif %}
               <th class="col-cant">Cant.</th>
               <th>Detalle de las mercaderías</th>
               <th>Especificaciones/Medidas</th>
-              <th class="col-estado">Estado</th>
-              <th class="col-precio">Precios</th>
+              {% if es_admin %}<th class="col-estado">Estado</th>{% endif %}
+              {% if es_admin %}<th class="col-precio">Precios</th>{% endif %}
               <th class="col-quitar"></th>
             </tr>
           </thead>
           <tbody id="tbody-items">
             {% for item_form in formset %}
               <tr class="item-row {% if item_form.DELETE.value %}fila-eliminada{% endif %}">
-                <td class="align-middle item-stock">{{ item_form.id }}{{ item_form.stock }}</td>
+                {% if es_admin %}<td class="align-middle item-stock">{{ item_form.id }}{{ item_form.stock }}</td>{% endif %}
                 <td class="align-middle">{{ item_form.cantidad }}</td>
                 <td>{{ item_form.detalle }}</td>
                 <td>{{ item_form.especificaciones }}</td>
-                <td>{{ item_form.estado }}</td>
-                <td>{{ item_form.precio }}</td>
+                {% if es_admin %}<td>{{ item_form.estado }}</td>{% endif %}
+                {% if es_admin %}<td>{{ item_form.precio }}</td>{% endif %}
                 <td class="text-center align-middle">
                   {{ item_form.DELETE }}
                   <button type="button" class="btn btn-sm btn-outline-danger btn-pill quitar-fila" title="Quitar fila">
@@ -164,12 +175,12 @@
               </tr>
             {% endfor %}
             <tr id="fila-template" class="d-none">
-              <td class="align-middle item-stock">{{ formset.empty_form.id }}{{ formset.empty_form.stock }}</td>
+              {% if es_admin %}<td class="align-middle item-stock">{{ formset.empty_form.id }}{{ formset.empty_form.stock }}</td>{% endif %}
               <td class="align-middle">{{ formset.empty_form.cantidad }}</td>
               <td>{{ formset.empty_form.detalle }}</td>
               <td>{{ formset.empty_form.especificaciones }}</td>
-              <td>{{ formset.empty_form.estado }}</td>
-              <td>{{ formset.empty_form.precio }}</td>
+              {% if es_admin %}<td>{{ formset.empty_form.estado }}</td>{% endif %}
+              {% if es_admin %}<td>{{ formset.empty_form.precio }}</td>{% endif %}
               <td class="text-center align-middle">
                 {{ formset.empty_form.DELETE }}
                 <button type="button" class="btn btn-sm btn-outline-danger btn-pill quitar-fila" title="Quitar fila">
@@ -180,7 +191,13 @@
           </tbody>
         </table>
       </div>
-      <div class="p-2 small text-muted">Stock = cantidad disponible (número). Mínimo 1 fila, máximo {{ max_items }}.</div>
+      <div class="p-2 small text-muted">
+        {% if es_admin %}
+          Stock = cantidad disponible (número). Mínimo 1 fila, máximo {{ max_items }}.
+        {% else %}
+          Cantidad y material. Mínimo 1 fila, máximo {{ max_items }}.
+        {% endif %}
+      </div>
     </div>
   </div>
 

@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Compras{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h4 class="mb-0"><i class="bi bi-cart-check"></i> Consolidado de compras</h4>
+  <a href="{% url 'pedidos:materiales' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-boxes"></i> Catálogo de materiales
+  </a>
+</div>
+
+<div class="alert alert-light border">
+  <i class="bi bi-info-circle"></i>
+  Suma lo que piden las notas <strong>pendientes y aprobadas</strong>, agrupado por material del
+  catálogo y desglosado por obra. Lo que ya entró en una orden de compra vigente no vuelve a
+  aparecer, así no se pide dos veces. Tildá los materiales que le vas a comprar a un mismo
+  proveedor y generás la orden.
+</div>
+
+<form method="get" class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2">
+      <div class="col-md-3">
+        <label class="form-label small mb-1">Obra</label>
+        <select name="obra" class="form-select form-select-sm">
+          <option value="">Todas las obras</option>
+          {% for obra in obras %}
+            <option value="{{ obra.pk }}" {% if filtros.obra == obra.pk|stringformat:'s' %}selected{% endif %}>{{ obra.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small mb-1">Estado</label>
+        <select name="estado" class="form-select form-select-sm" multiple size="3">
+          {% for codigo, etiqueta in estados %}
+            <option value="{{ codigo }}" {% if codigo in filtros.estado %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">Desde</label>
+        <input type="date" name="desde" value="{{ filtros.desde }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">Hasta</label>
+        <input type="date" name="hasta" value="{{ filtros.hasta }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2 d-flex align-items-end gap-2 pb-1">
+        <button type="submit" class="btn btn-primary btn-sm w-100">Filtrar</button>
+      </div>
+    </div>
+    <div class="row g-2 mt-1">
+      <div class="col-md-3">
+        <label class="form-label small mb-1">Proveedor</label>
+        <select name="proveedor" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for prov in proveedores %}
+            <option value="{{ prov.pk }}" {% if filtros.proveedor == prov.pk|stringformat:'s' %}selected{% endif %}>{{ prov.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small mb-1">Buscar material</label>
+        <input type="text" name="q" value="{{ filtros.q }}" class="form-control form-control-sm" placeholder="cemento, ladrillo…">
+      </div>
+      <div class="col-md-5 d-flex align-items-end gap-3 pb-1">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="incluir_pedidas" value="1" id="f_inc" {% if filtros.incluir_pedidas %}checked{% endif %}>
+          <label class="form-check-label small" for="f_inc">Incluir lo ya pedido</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="sin_catalogar" value="1" id="f_sin" {% if filtros.sin_catalogar %}checked{% endif %}>
+          <label class="form-check-label small" for="f_sin">Ver ítems sin catalogar</label>
+        </div>
+        <a href="{% url 'pedidos:compras' %}" class="btn btn-outline-secondary btn-sm ms-auto">Limpiar</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% if hay_datos %}
+<form method="post" action="{% url 'pedidos:compras_crear_orden' %}">
+  {% csrf_token %}
+  {% include 'pedidos/_compras_filtros_hidden.html' %}
+
+  <div class="card mb-3">
+    <div class="card-header section-card-header d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-list-check"></i> Materiales a comprar</span>
+      <span class="badge text-bg-light border">{{ totales|length }} material(es)</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width:36px"></th>
+              <th>Material</th>
+              <th class="text-end">Cantidad total</th>
+              <th class="text-center">Unidad</th>
+              <th class="text-center">Notas</th>
+              <th class="text-center">Obras</th>
+              <th>Desglose por obra</th>
+              <th style="width:120px">Precio unit.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for total, obras in totales %}
+              <tr>
+                <td class="text-center">
+                  <input class="form-check-input" type="checkbox" name="materiales" value="{{ total.material_id }}" title="Incluir en la orden">
+                </td>
+                <td>
+                  <span class="fw-semibold">{{ total.material__nombre }}</span>
+                  {% if total.material__especificacion %}
+                    <div class="small text-muted">{{ total.material__especificacion }}</div>
+                  {% endif %}
+                </td>
+                <td class="text-end fw-bold">{{ total.total|floatformat:"-2" }}</td>
+                <td class="text-center text-muted">{{ total.material__unidad|default:'—' }}</td>
+                <td class="text-center">{{ total.notas }}</td>
+                <td class="text-center">{{ total.obras }}</td>
+                <td class="small">
+                  {% for item in obras %}
+                    <span class="badge text-bg-light border text-dark">
+                      {{ item.nombre }}: {{ item.cantidad|floatformat:"-2" }}
+                    </span>
+                  {% endfor %}
+                </td>
+                <td>
+                  <input type="text" inputmode="decimal" name="precio_{{ total.material_id }}"
+                         class="form-control form-control-sm text-end" placeholder="0,00">
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="2" class="fw-semibold">Total de ítems a comprar</td>
+              <td class="text-end fw-bold">{{ total_items|floatformat:"-2" }}</td>
+              <td colspan="4"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer d-flex flex-wrap gap-3 align-items-center">
+      <div class="d-flex gap-2 align-items-center">
+        <label class="form-label mb-0 small" for="orden_proveedor">Proveedor</label>
+        <select name="orden_proveedor" id="orden_proveedor" class="form-select form-select-sm w-auto" required>
+          <option value="">Elegir…</option>
+          {% for prov in proveedores %}
+            <option value="{{ prov.pk }}">{{ prov.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <label class="form-label mb-0 small" for="orden_fecha">Fecha</label>
+        <input type="date" name="orden_fecha" id="orden_fecha" class="form-control form-control-sm w-auto" required>
+      </div>
+      <div class="d-flex gap-2 align-items-center flex-grow-1">
+        <input type="text" name="orden_observaciones" class="form-control form-control-sm" placeholder="Observaciones para el proveedor…">
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="marcar_cerrado" value="1" id="m_cerr">
+        <label class="form-check-label small" for="m_cerr">Marcar las notas como Cerrado</label>
+      </div>
+      <button type="submit" class="btn btn-success">
+        <i class="bi bi-file-earmark-text"></i> Crear orden de compra
+      </button>
+    </div>
+  </div>
+</form>
+
+{% if sin_catalogar %}
+  <div class="card mb-3 border-warning">
+    <div class="card-header bg-warning-subtle fw-semibold">
+      <i class="bi bi-exclamation-triangle"></i>
+      {{ sin_catalogar|length }} texto(s) sin catalogar — no se pudieron agrupar
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        <thead class="table-light"><tr><th>Texto tal como se escribió</th><th class="text-end">Cantidad</th><th class="text-center">Notas</th><th></th></tr></thead>
+        <tbody>
+          {% for item in sin_catalogar %}
+            <tr>
+              <td>{{ item.detalle }}</td>
+              <td class="text-end">{{ item.total|floatformat:"-2" }}</td>
+              <td class="text-center">{{ item.notas }}</td>
+              <td class="text-end">
+                <a href="{% url 'pedidos:materiales' %}?q={{ item.detalle|urlencode }}" class="btn btn-sm btn-outline-secondary">
+                  Catalogar
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="p-2 small text-muted">
+        Para agruparlos, creá el material en el catálogo con el nombre correcto y después
+        editá estas notas: los ítems que coincidan se enlazan solos.
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+{% else %}
+  <div class="card">
+    <div class="card-body text-center text-muted py-5">
+      <i class="bi bi-check2-circle" style="font-size:2rem"></i>
+      <p class="mb-0 mt-2">No hay nada pendiente de comprar con estos filtros.</p>
+      <a href="{% url 'pedidos:panel' %}" class="btn btn-outline-secondary btn-sm mt-3">Ir al panel de notas</a>
+    </div>
+  </div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header section-card-header fw-semibold">
+    <i class="bi bi-receipt"></i> Últimas órdenes de compra
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr><th>O.C.</th><th>Proveedor</th><th>Fecha</th><th class="text-center">Líneas</th><th class="text-center">Notas</th><th>Estado</th><th class="text-end">Acciones</th></tr>
+      </thead>
+      <tbody>
+        {% for orden in ordenes %}
+          <tr class="{% if orden.anulada %}opacity-50{% endif %}">
+            <td class="fw-bold">OC {{ orden.numero|stringformat:"04d" }}</td>
+            <td>{{ orden.proveedor.nombre }}</td>
+            <td>{{ orden.fecha|date:'d/m/Y' }}</td>
+            <td class="text-center">{{ orden.lineas.count }}</td>
+            <td class="text-center">{{ orden.notas.count }}</td>
+            <td>
+              {% if orden.anulada %}<span class="badge text-bg-secondary">Anulada</span>
+              {% else %}<span class="badge text-bg-success">Vigente</span>{% endif %}
+            </td>
+            <td class="text-end text-nowrap">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'pedidos:orden_detalle' orden.pk %}" title="Ver">
+                <i class="bi bi-eye"></i>
+              </a>
+              <a class="btn btn-sm btn-outline-success" href="{% url 'pedidos:orden_descargar' orden.pk %}" title="Descargar Excel">
+                <i class="bi bi-download"></i>
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-4">Todavía no generaste órdenes de compra.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
